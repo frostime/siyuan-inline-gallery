@@ -26,5 +26,6 @@ function __galleryRequire(name){
 '''.replace('MODULES',',\n'.join(modules))
 output=loader+transform((root/'src/index.js').read_text())
 assert "require('./" not in output
-(root/'index.js').write_text(output)
-print('Built index.js; only external module: siyuan')
+(root/'dist').mkdir(exist_ok=True)
+(root/'dist'/'index.js').write_text(output)
+print('Built dist/index.js; only external module: siyuan')

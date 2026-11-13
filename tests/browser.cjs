@@ -171,7 +171,7 @@ let PNG;try{({PNG}=require('pngjs'));}catch{({PNG}=require(process.env.CODEX_PRI
   assert.ok(await p.locator('.sig-thumbs').evaluate(e=>{const a=e.getBoundingClientRect(),b=e.parentElement.getBoundingClientRect();return Math.abs((a.left+a.right)/2-(b.left+b.right)/2)<1;}));
   assert.equal(await p.locator('.sig-toolbar').evaluate(e=>{const r=e.getBoundingClientRect();return[...e.querySelectorAll('button:not([hidden])')].every(b=>b.getBoundingClientRect().right<=r.right+1);}),true);
  });
- fs.writeFileSync(path.join(__dirname,'browser-result.json'),JSON.stringify({status:'passed',tests:report.length,bundleSha256:require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(fixture.root,'index.js'))).digest('hex'),cases:report,environment:'Headless Chromium with exact shipped bundle, mock SiYuan SDK/kernel; not a real SiYuan installation.'},null,2));
+ fs.writeFileSync(path.join(__dirname,'browser-result.json'),JSON.stringify({status:'passed',tests:report.length,bundleSha256:require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(fixture.root,'dist','index.js'))).digest('hex'),cases:report,environment:'Headless Chromium with exact shipped bundle, mock SiYuan SDK/kernel; not a real SiYuan installation.'},null,2));
  console.log('All '+report.length+' browser tests passed.');
  }finally{await browser.close();server.close();}
 })().catch(error=>{console.error(error);process.exit(1);});

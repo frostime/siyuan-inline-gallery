@@ -1,7 +1,7 @@
 {
   "status": "passed",
   "tests": 25,
-  "bundleSha256": "530a167bca3c55c057176eedcd685090b6680f0eac2c3ad105109a23ffdbc6e3",
+  "bundleSha256": "1203055148c3e61fc9fbc5afbfa355c3c41a0cfef76d60d5bf0ce0aed13b058d",
   "cases": [
     "empty gallery and icon-only accessible toolbar",
     "host SVG/image/button theme rules cannot penetrate the gallery ShadowRoot",
