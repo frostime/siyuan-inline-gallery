@@ -1,0 +1,13 @@
+/* Reproduction of generic editor reset/typography rules, including the SVG rule
+ * that broke 0.2.0. Sources inspected on 2026-11-13:
+ * siyuan-note/siyuan app/src/assets/scss/util/_reset.scss
+ * siyuan-note/siyuan app/src/assets/scss/component/_typography.scss
+ * This fixture is deliberately outside the gallery ShadowRoot. */
+svg {fill:currentColor;display:inline-block;}
+img {max-width:100%;vertical-align:middle;border:0;height:auto;overflow:hidden;}
+button,input,select,textarea {margin:0;font-size:100%;vertical-align:middle;outline:none;}
+button,input {line-height:normal;}
+.protyle-wysiwyg {display:flex;flex-direction:column;font-variant-ligatures:no-common-ligatures;}
+.protyle-wysiwyg img {max-width:100%;margin:0 auto;}
+.protyle-wysiwyg [data-node-id] {line-height:1.625;padding:4px;margin:2px 0;border-radius:4px;}
+.custom-block {min-height:32px;}

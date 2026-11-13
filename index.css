@@ -1,0 +1,3 @@
+/* Only the mount host lives in the editor's light DOM. Component CSS is bundled
+ * into index.js and installed inside each gallery's ShadowRoot. */
+.sig-gallery-host {display:block;box-sizing:border-box;width:100%;min-width:0;max-width:100%;margin:0;padding:0;}

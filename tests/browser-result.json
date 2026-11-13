@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "tests": 25,
+  "bundleSha256": "530a167bca3c55c057176eedcd685090b6680f0eac2c3ad105109a23ffdbc6e3",
+  "cases": [
+    "empty gallery and icon-only accessible toolbar",
+    "host SVG/image/button theme rules cannot penetrate the gallery ShadowRoot",
+    "wide and tall images retain all four colored corners in row and main-image modes",
+    "slash is the sole insertion entry; no breadcrumb or command-palette entry is registered",
+    "large single-row scrolling at wide and narrow widths, without wrapping",
+    "equal inline modes persist and preserve independent row/selection state through host disposal",
+    "thumbnail strip centers when short and keeps a selected item visible when overflowing",
+    "image zoom is separate from mode; actual pixels, fit and keyboard navigation work",
+    "captions are inert text; reorder/remove preserve the selected image and never delete files",
+    "batch paste accepts duplicate filenames with legacy succMap and native asset protection",
+    "file picker and drop accept modern succFiles; ordinary editor paste is untouched",
+    "copied local assets are reused instead of uploading the accompanying clipboard bitmap",
+    "Base64 clipboard images are localized and not embedded in block JSON",
+    "partial upload failure preserves successes and reports the error",
+    "mode changes while uploading merge the latest saved layout and keep imported images",
+    "simultaneous recovery and mode saving serialize writes rather than coalescing stale image snapshots",
+    "rejected writes persist recovery and restore each uploaded image once",
+    "closing the originating editor during upload retains recoverable images",
+    "readonly modes and previews work locally without any kernel writes",
+    "v1 source is readable without content rewrite until the first intentional edit",
+    "corrupt or newer block formats remain visible and are never overwritten",
+    "Markdown export and saved image-size/caption settings retain real content",
+    "remote streams are bounded and invalid remote formats are rejected",
+    "disable aborts pending imports, removes observers/listeners and makes no late writes",
+    "dark theme, narrow controls and reduced motion keep layout and navigation usable"
+  ],
+  "environment": "Headless Chromium with exact shipped bundle, mock SiYuan SDK/kernel; not a real SiYuan installation."
+}
