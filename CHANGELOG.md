@@ -1,0 +1,36 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.2.0] - 2026-11-15
+
+### Added
+
+- 编辑模式：点击「编辑」后编辑面板替换画廊，而不是在画廊上方叠加控件；面板分「图片」与「显示」两个分区，点「完成」回到浏览。
+- 「显示」分区在设置下方直接显示画廊，调整图片大小、间距、说明时能看到实时效果；「图片」分区隐藏画廊，因为排序和写说明不需要看渲染结果。
+- 「添加图片」粘入地址或 Markdown 后立即显示解析结果（将导入几项、还有几行未被识别），再决定是否导入。
+- 复制失败时以只读输出框显示 Markdown，可直接手动复制。
+
+### Changed
+
+- 图片说明固定在图片正下方居中，并改为固定槽位：行模式单行、主图模式两行。没有说明的图片同样占位，因此说明不再改变同排图片的位置。
+- 编辑面板中的导入与导出从同一个折叠区拆成两个独立分区；「保存到 assets」改为「下载到 assets」，「复制图片 Markdown」改为「复制为 Markdown」。
+
+### Fixed
+
+- 有说明的图片在行模式中比同排图片上移，主图模式翻到无说明的图片时下方缩略图条被顶动（约 27px）。
+
+## [0.1.0] - 2026-11-14
+
+### Added
+
+- 基于自定义块的图片画廊，通过 `/gallery`、`/画廊` 或拼音关键词插入。
+- 横排与主图两套显示方式，居中缩略图条、纯图标工具栏、方向键切换。
+- 多文件选择、拖放、剪贴板截图与文件、图片 HTML、图片 Markdown、`assets/...` 路径、网络图片 URL 导入；网络图片可下载到 assets 或保留外链。
+- 上传批次保留恢复记录，写入被拒或原编辑器关闭后可重试插入。
+- 为每个本地路径维护 `custom-data-assets-gallery-*` 块属性，避免资源被误判为未引用。
+- 只读与发布模式下的本地浏览。
