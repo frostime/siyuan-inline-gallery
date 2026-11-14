@@ -324,7 +324,8 @@ module.exports = function renderGallery(plugin, {element, content, setContent}) 
     // ── Stage: rendered cards and layout math ────────────────────────────────
     const schedule = () => { if (!disposed && !frame) frame = win.requestAnimationFrame(() => { frame = 0; layout(); }); };
 
-    const photo = (image, index, scope) => {
+    // Every card reserves the same caption slot, so captions never shift an image.
+    const photo = (image, index, scope, captionClass = '') => {
         const card = el(doc, 'figure', 'sig-card');
         card.dataset.imageId = image.id;
         const openButton = button(`放大第 ${index + 1} 张图片`, '', () => openLightbox(index, openButton), card, {signal: scope});
@@ -347,7 +348,8 @@ module.exports = function renderGallery(plugin, {element, content, setContent}) 
         expand.append(icon(doc, 'expand'));
         openButton.append(img, expand);
         card.append(openButton);
-        if (model.captions && image.alt) card.append(el(doc, 'figcaption', '', image.alt));
+        // An empty caption still occupies its slot: that is what keeps images aligned.
+        if (model.captions) card.append(el(doc, 'figcaption', captionClass, image.alt));
         return card;
     };
 
@@ -365,12 +367,12 @@ module.exports = function renderGallery(plugin, {element, content, setContent}) 
             plus.disabled = !writable() || plugin.jobs.has(id);
             stage.append(empty);
         } else if (displayMode === 'row') {
-            model.images.forEach((image, index) => stage.append(photo(image, index, scope)));
+            model.images.forEach((image, index) => stage.append(photo(image, index, scope, '')));
         } else {
             const image = selected();
             state.activeId = image.id;
             const main = el(doc, 'div', 'sig-main');
-            main.append(photo(image, selectedIndex(), scope));
+            main.append(photo(image, selectedIndex(), scope, 'sig-caption-focus'));
             const thumbs = el(doc, 'div', 'sig-thumbs');
             thumbs.setAttribute('role', 'group');
             thumbs.setAttribute('aria-label', '选择图片');

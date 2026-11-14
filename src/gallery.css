@@ -40,7 +40,9 @@
 .sig-gallery .sig-thumb {display:block;flex:none;width:76px;height:60px;padding:2px;margin:0;background:var(--sig-soft);border:1px solid var(--sig-line);border-radius:4px;box-shadow:none;cursor:pointer;}
 .sig-gallery .sig-thumb[aria-pressed=true] {outline:2px solid var(--sig-accent);outline-offset:2px;}
 .sig-gallery .sig-thumb img {display:block;width:100%;height:100%;max-width:100%;max-height:none;object-fit:contain;margin:0;border:0;border-radius:0;}
-.sig-gallery .sig-card figcaption {padding:7px 2px 0;font-size:12px;color:var(--sig-muted);overflow-wrap:anywhere;}
+.sig-gallery .sig-card figcaption {height:22px;line-height:22px;padding:0 2px;font-size:12px;color:var(--sig-muted);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* Main-image mode has room for two lines, so its slot is taller than the row slot. */
+.sig-gallery .sig-card figcaption.sig-caption-focus {height:44px;padding-top:8px;line-height:1.5;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere;}
 .sig-gallery .sig-broken .sig-photo::after {content:'图片未能加载';position:absolute;inset:0;display:grid;place-items:center;background:var(--sig-soft);color:var(--sig-muted);font:13px/1.5 var(--b3-font-family,system-ui);}
 .sig-gallery .sig-empty {display:grid;place-items:center;width:100%;min-height:200px;border:1px dashed var(--sig-line);border-radius:5px;background:var(--sig-soft);}
 .sig-gallery .sig-empty>.sig-button {width:44px;height:44px;}
