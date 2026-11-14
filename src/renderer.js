@@ -30,6 +30,15 @@ function icon(doc, name) {
 const isImageFile = file => /^image\//i.test(file.type) ||
     /\.(png|jpe?g|gif|webp|avif|bmp|svg|tiff?|heic|heif)$/i.test(file.name);
 
+const fileName = src => src.split(/[?#]/)[0].split('/').pop() || src;
+// Import prefers Markdown image syntax and ignores other lines. The preview
+// counts those instead of letting them disappear without a trace.
+function unparsedLineCount(text, refs) {
+    const candidates = text.split(/\r?\n/).map(line => line.trim())
+        .filter(line => /(?:assets\/|https?:\/\/|!\[)/.test(line));
+    return candidates.filter(line => !refs.some(ref => line.includes(ref.src))).length;
+}
+
 module.exports = function renderGallery(plugin, {element, content, setContent}) {
     const doc = element.ownerDocument, win = doc.defaultView;
     const id = element.closest('[data-type="NodeCustomBlock"]')?.getAttribute('data-node-id') || '';
@@ -54,9 +63,10 @@ module.exports = function renderGallery(plugin, {element, content, setContent}) 
         return;
     }
 
-    const state = plugin.ui.get(id) || {scroll: 0, activeId: null, editing: false, dimensions: new Map()};
+    const state = plugin.ui.get(id) || {scroll: 0, activeId: null, editing: false, editingTab: 'images', dimensions: new Map()};
     plugin.ui.set(id, state);
     state.dimensions ||= new Map();
+    state.editingTab ||= 'images';
     let displayMode = readonly(element) ? (state.readMode || model.layout) : model.layout;
 
     let disposed = false, saving = false, frame = 0, noticeTimer = 0, stageEvents = new AbortController(), restoreRow = true;
@@ -106,7 +116,8 @@ module.exports = function renderGallery(plugin, {element, content, setContent}) 
 
     const stage = el(doc, 'div', 'sig-stage');
     const panel = el(doc, 'div', 'sig-panel');
-    panel.hidden = !state.editing;
+    // One rAF-coalesced layout pass: hidden galleries report width 0 and skip.
+    const schedule = () => { if (!disposed && !frame) frame = win.requestAnimationFrame(() => { frame = 0; layout(); }); };
     const picker = el(doc, 'input', 'sig-hidden');
     picker.type = 'file'; picker.multiple = true; picker.accept = 'image/*';
     picker.addEventListener('change', () => {
@@ -177,18 +188,8 @@ module.exports = function renderGallery(plugin, {element, content, setContent}) 
     const recovery = button('恢复待插入图片', 'recover', () => recover().catch(warn));
     const add = button('添加图片', 'add', () => picker.click());
     mutable.push(add);
-    const edit = button('编辑', 'edit', () => {
-        state.editing = !state.editing;
-        panel.hidden = !state.editing;
-        setEditGlyph();
-    });
+    const edit = button('编辑', 'edit', () => setEditing(!state.editing));
     mutable.push(edit);
-    const setEditGlyph = () => {
-        edit.replaceChildren(icon(doc, state.editing ? 'done' : 'edit'));
-        edit.setAttribute('aria-label', state.editing ? '完成' : '编辑');
-        edit.title = state.editing ? '完成' : '编辑';
-    };
-    if (state.editing) setEditGlyph();
 
     function sync() {
         if (disposed) return;
@@ -216,14 +217,69 @@ module.exports = function renderGallery(plugin, {element, content, setContent}) 
         root.setAttribute('aria-busy', String(active));
         working.hidden = !active;
         for (const control of mutable) control.disabled = active || !writable() || control.dataset.edge === 'true';
-        add.hidden = edit.hidden = !writable();
-        if (!writable()) panel.hidden = true;
+        add.hidden = !writable();
+        syncEditMode();
         recovery.hidden = !writable() || !Object.values(plugin.pending).some(v => v.blockId === id);
         recovery.disabled = active || !writable();
         sync();
     }
 
-    // ── Editing panel: size, gap, captions, per-image rows, links/export ─────
+    // ── Editing panel: an explicit edit mode with two tabs ──────────────────
+    // Edit mode replaces the gallery instead of stacking on top of it. The
+    // "display" tab keeps the gallery visible, because size and gap changes
+    // need live feedback; the "images" tab hides it, because reordering and
+    // captions do not.
+    const panelEvents = new AbortController(), panelSignal = panelEvents.signal;
+
+    const editHead = el(doc, 'div', 'sig-edit-head');
+    editHead.append(el(doc, 'span', 'sig-edit-title', `编辑图片画廊 · ${model.images.length} 张`));
+    editHead.append(el(doc, 'span', 'sig-spacer'));
+    const finish = button('完成', 'done', () => setEditing(false), editHead, {text: true, signal: panelSignal});
+    mutable.push(finish);
+
+    const tabs = el(doc, 'div', 'sig-tabs');
+    tabs.setAttribute('role', 'tablist');
+    tabs.setAttribute('aria-label', '编辑分区');
+    const imagesView = el(doc, 'div', 'sig-edit-view');
+    const displayView = el(doc, 'div', 'sig-edit-view');
+    let imagesTab = null, displayTab = null;
+    const selectTab = name => {
+        state.editingTab = name === 'display' ? 'display' : 'images';
+        if (imagesTab) imagesTab.setAttribute('aria-selected', String(state.editingTab === 'images'));
+        if (displayTab) displayTab.setAttribute('aria-selected', String(state.editingTab === 'display'));
+        imagesView.hidden = state.editingTab !== 'images';
+        displayView.hidden = state.editingTab !== 'display';
+        syncEditMode();
+        schedule();
+    };
+    const tab = (label, name) => {
+        const node = el(doc, 'button', 'sig-tab', label);
+        node.type = 'button';
+        node.setAttribute('role', 'tab');
+        node.addEventListener('click', () => selectTab(name), {signal: panelSignal});
+        tabs.append(node);
+        return node;
+    };
+    imagesTab = tab('图片', 'images');
+    displayTab = tab('显示', 'display');
+    panel.append(editHead, tabs, imagesView, displayView);
+
+    function syncEditMode() {
+        if (disposed) return;
+        const editing = state.editing && writable();
+        panel.hidden = !editing;
+        // The gallery doubles as the live preview while tuning size and gap.
+        stage.hidden = editing && state.editingTab !== 'display';
+        edit.hidden = !writable() || editing;
+    }
+    function setEditing(value) {
+        state.editing = value;
+        syncEditMode();
+        schedule();
+        if (disposed) return;
+        (value ? finish : edit).focus({preventScroll: true});
+    }
+
     const settings = el(doc, 'div', 'sig-settings');
     const sizeLabel = el(doc, 'label', 'sig-field', '图片大小');
     const size = el(doc, 'input', 'sig-range');
@@ -252,10 +308,12 @@ module.exports = function renderGallery(plugin, {element, content, setContent}) 
     captionLabel.append(captions);
     settings.append(captionLabel);
     mutable.push(captions);
-    panel.append(settings);
+    displayView.append(settings);
 
+    const listSection = el(doc, 'section', 'sig-edit-section');
     const list = el(doc, 'div', 'sig-list');
-    panel.append(list);
+    listSection.append(list);
+    imagesView.append(listSection);
 
     model.images.forEach((image, index) => {
         const item = el(doc, 'div', 'sig-item');
@@ -289,40 +347,86 @@ module.exports = function renderGallery(plugin, {element, content, setContent}) 
         list.append(item);
     });
 
-    const details = el(doc, 'details', 'sig-details');
-    details.append(el(doc, 'summary', '', '链接与导出'));
+    // Import keeps one role: it reads text and shows what it parsed. Export
+    // gets its own read-only output block instead of reusing this field.
+    const addSection = el(doc, 'section', 'sig-edit-section');
+    addSection.append(el(doc, 'h3', '', '添加图片'));
     const links = el(doc, 'textarea', 'sig-links');
-    links.placeholder = 'assets 路径、图片 Markdown 或网络图片 URL';
-    links.setAttribute('aria-label', '图片路径或 Markdown');
-    details.append(links);
+    links.rows = 1;
+    links.placeholder = '粘贴图片地址或 ![](…) Markdown';
+    links.setAttribute('aria-label', '图片地址或 Markdown');
+    addSection.append(links);
+    const parseBox = el(doc, 'div', 'sig-parse');
+    const parseNote = el(doc, 'p', 'sig-parse-note');
+    addSection.append(parseBox, parseNote);
+    // A one-line field that still accepts a multi-line paste: the input would
+    // swallow the newlines.
+    const growLinks = () => {
+        links.style.height = 'auto';
+        links.style.height = Math.min(120, links.scrollHeight + 2) + 'px';
+    };
+    const previewLinks = () => {
+        growLinks();
+        const text = links.value.trim();
+        const refs = text ? C.textImages(text) : [];
+        parseBox.replaceChildren(...refs.slice(0, 12).map(ref => {
+            const chip = el(doc, 'span', 'sig-chip');
+            chip.append(el(doc, 'span', '', fileName(ref.src)));
+            if (/^https?:/i.test(ref.src)) chip.append(el(doc, 'em', '', '网络'));
+            return chip;
+        }));
+        parseNote.hidden = !text;
+        if (!text) return refs;
+        const dropped = unparsedLineCount(text, refs);
+        parseNote.textContent = refs.length
+            ? `将导入 ${refs.length} 项` + (dropped ? `，另有 ${dropped} 行未被识别` : '')
+            : '未识别到图片地址';
+        return refs;
+    };
+    links.addEventListener('input', previewLinks, {signal: panelSignal});
     mutable.push(links);
-    const linkActions = el(doc, 'div', 'sig-actions');
     const importLinks = keep => {
         const refs = C.textImages(links.value);
-        if (refs.length) plugin.importImages(id, {files: [], refs}, keep);
-        else warn(new Error('未找到有效图片路径。'));
+        if (!refs.length) { warn(new Error('未找到有效图片路径。')); return; }
+        plugin.importImages(id, {files: [], refs}, keep);
     };
+    const linkActions = el(doc, 'div', 'sig-actions');
     mutable.push(
-        button('保存到 assets', 'download', () => importLinks(false), linkActions, {text: true}),
-        button('保留外链', 'link', () => importLinks(true), linkActions, {text: true}),
+        button('下载到 assets', 'download', () => importLinks(false), linkActions, {text: true, signal: panelSignal}),
+        button('保留外链', 'link', () => importLinks(true), linkActions, {text: true, signal: panelSignal}),
     );
-    button('复制图片 Markdown', 'copy', async () => {
+    addSection.append(linkActions);
+    imagesView.append(addSection);
+
+    const exportSection = el(doc, 'section', 'sig-edit-section');
+    exportSection.append(el(doc, 'h3', '', '导出'));
+    const exportActions = el(doc, 'div', 'sig-actions');
+    const exportOutput = el(doc, 'div');
+    const copyMarkdown = async () => {
         const text = C.markdown(model.images);
         try {
             await win.navigator.clipboard.writeText(text);
-            if (!disposed) notice('已复制');
+            if (!disposed) notice('已复制 Markdown');
         } catch {
             if (disposed) return;
-            links.value = text; links.focus(); links.select();
-            if (doc.execCommand?.('copy')) notice('已复制');
-            else warn(new Error('剪贴板不可用，图片 Markdown 已放入文本框。'));
+            const area = el(doc, 'textarea');
+            area.readOnly = true; area.value = text;
+            area.setAttribute('aria-label', '图片 Markdown');
+            const box = el(doc, 'div', 'sig-output');
+            box.append(el(doc, 'p', '', '剪贴板不可用，请手动复制下面的内容'), area);
+            exportOutput.replaceChildren(box);
+            area.focus(); area.select();
+            if (doc.execCommand?.('copy')) notice('已复制 Markdown');
+            else warn(new Error('剪贴板不可用，请手动复制下面的 Markdown。'));
         }
-    }, linkActions);
-    details.append(linkActions);
-    panel.append(details);
+    };
+    mutable.push(button('复制为 Markdown', 'copy', () => { copyMarkdown().catch(warn); }, exportActions, {text: true, signal: panelSignal}));
+    exportSection.append(exportActions, exportOutput);
+    imagesView.append(exportSection);
+
+    selectTab(state.editingTab);
 
     // ── Stage: rendered cards and layout math ────────────────────────────────
-    const schedule = () => { if (!disposed && !frame) frame = win.requestAnimationFrame(() => { frame = 0; layout(); }); };
 
     // Every card reserves the same caption slot, so captions never shift an image.
     const photo = (image, index, scope, captionClass = '') => {
