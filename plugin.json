@@ -1,7 +1,7 @@
 {
   "name": "siyuan-inline-gallery",
   "author": "Inline Gallery contributors",
-  "url": "https://github.com/siyuan-note/plugin-sample",
+  "url": "https://github.com/frostime/siyuan-inline-gallery",
   "version": "0.2.0",
   "minAppVersion": "3.8.5",
   "backends": [
