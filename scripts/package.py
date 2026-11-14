@@ -24,6 +24,11 @@ for name in required:
     destination = dist / name
     destination.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source, destination)
+# README screenshots travel with the plugin so installed docs render offline.
+docs = root / 'docs'
+if docs.exists():
+    shutil.copytree(docs, dist / 'docs', dirs_exist_ok=True)
+    required += sorted('docs/' + p.relative_to(docs).as_posix() for p in docs.rglob('*') if p.is_file())
 # Keep the standalone contract preview in sync with the shipped bundle.
 subprocess.run(['node', str(root / 'tests/fixture.cjs')], env={**__import__('os').environ, 'WRITE_PREVIEW':'1'}, check=True)
 version = json.loads((root / 'plugin.json').read_text())['version']

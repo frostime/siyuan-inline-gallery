@@ -4,6 +4,12 @@ A simple gallery feature built on SiYuan custom blocks.
 
 Type **`/gallery`** or **`/画廊`** in a normal document paragraph, select "Image Gallery" and press Enter. Keywords such as `图片画廊` and `hualang` are also supported, and the compact slash menu works as well.
 
+![Row mode: a large horizontally scrolling row with captions centered under each image](docs/images/row-mode.png)
+
+| Main-image mode | Edit mode |
+| --- | --- |
+| ![Main-image mode: full-width image with a centered thumbnail strip](docs/images/focus-mode.png) | ![Edit mode: image list, import preview and export](docs/images/edit-mode.png) |
+
 ## Image Import
 
 | Input | Behavior |
