@@ -1,0 +1,69 @@
+name: Create Release on Tag Push
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate release version
+        shell: bash
+        run: |
+          tag_version="${GITHUB_REF_NAME#v}"
+          package_version="$(node -p "require('./package.json').version")"
+          plugin_version="$(node -p "require('./plugin.json').version")"
+
+          if [[ "$GITHUB_REF_NAME" != v* || -z "$tag_version" ]]; then
+            echo "Invalid release tag: $GITHUB_REF_NAME (expected v<version>)"
+            exit 1
+          fi
+
+          if [[ "$tag_version" != "$package_version" ]]; then
+            echo "Tag version ($tag_version) does not match package.json ($package_version)"
+            exit 1
+          fi
+
+          if [[ "$tag_version" != "$plugin_version" ]]; then
+            echo "Tag version ($tag_version) does not match plugin.json ($plugin_version)"
+            exit 1
+          fi
+
+          echo "Release version validated: $tag_version"
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build production package
+        run: |
+          set -euo pipefail
+          npm run package
+          mv ../siyuan-inline-gallery-*.zip .
+          ls -l siyuan-inline-gallery-*.zip
+
+      - name: Release
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          artifactErrorsFailBuild: true
+          artifacts: "siyuan-inline-gallery-*.zip"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          prerelease: false
