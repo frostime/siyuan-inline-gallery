@@ -1,7 +1,7 @@
 {
   "status": "passed",
-  "tests": 25,
-  "bundleSha256": "1203055148c3e61fc9fbc5afbfa355c3c41a0cfef76d60d5bf0ce0aed13b058d",
+  "tests": 26,
+  "bundleSha256": "514778f289e1fae0eadb4b4a9fc61d01d50cda3a7b1e369fabe06cb131432690",
   "cases": [
     "empty gallery and icon-only accessible toolbar",
     "host SVG/image/button theme rules cannot penetrate the gallery ShadowRoot",
@@ -25,6 +25,7 @@
     "v1 source is readable without content rewrite until the first intentional edit",
     "corrupt or newer block formats remain visible and are never overwritten",
     "Markdown export and saved image-size/caption settings retain real content",
+    "edit mode replaces the gallery, remembers its tab and returns to browsing on finish",
     "remote streams are bounded and invalid remote formats are rejected",
     "disable aborts pending imports, removes observers/listeners and makes no late writes",
     "dark theme, narrow controls and reduced motion keep layout and navigation usable"

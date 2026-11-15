@@ -1,0 +1,47 @@
+name: Check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Install Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Unit tests
+        run: npm test
+
+      # The browser suite needs playwright and pngjs, which this plugin does not
+      # declare as dependencies. Run `npm run test:browser` locally instead.
+      - name: Build the installable package
+        run: npm run package
+
+      - name: Verify the package contents
+        run: |
+          set -euo pipefail
+          zip_path="$(ls ../siyuan-inline-gallery-*.zip)"
+          unzip -l "$zip_path"
+          unzip -p "$zip_path" plugin.json | grep -q '"name": "siyuan-inline-gallery"'
+          unzip -p "$zip_path" index.js | grep -q 'customBlockRenders'

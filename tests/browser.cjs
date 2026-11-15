@@ -66,6 +66,8 @@ let PNG;try{({PNG}=require('pngjs'));}catch{({PNG}=require(process.env.CODEX_PRI
   }
  });
  await run('equal inline modes persist and preserve independent row/selection state through host disposal',async p=>{
+  // Instant scrolling keeps this case about saved state, not about smooth-scroll timing.
+  await p.emulateMedia({reducedMotion:'reduce'});
   await seed(p,3);await p.getByRole('button',{name:'下一张',exact:true}).click();await p.waitForTimeout(400);let scroll=await p.locator('.sig-stage').evaluate(e=>e.scrollLeft);assert.ok(scroll>0);
   await p.getByRole('button',{name:'主图',exact:true}).click();await p.waitForFunction(()=>model.layout==='focus');await settle(p);
   scroll=await p.evaluate(()=>plugin.ui.get('20261113000000-abcdefg').scroll);assert.ok(scroll>0);
@@ -153,8 +155,14 @@ let PNG;try{({PNG}=require('pngjs'));}catch{({PNG}=require(process.env.CODEX_PRI
   const before=await p.evaluate(()=>calls.length);await p.evaluate(()=>render('{"version":99,"images":[]}'));assert.ok(await p.locator('.sig-invalid').isVisible());assert.match(await p.locator('.sig-invalid pre').textContent(),/"version":99/);assert.equal(await p.evaluate(()=>calls.length),before);
  });
  await run('Markdown export and saved image-size/caption settings retain real content',async p=>{
-  await seed(p);await p.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.exported=text;}}}));await p.getByRole('button',{name:'编辑',exact:true}).click();await p.getByText('链接与导出',{exact:true}).click();await p.getByRole('button',{name:'复制图片 Markdown',exact:true}).click();assert.match(await p.evaluate(()=>exported),/assets\/sample-0.svg/);
-  await p.getByRole('slider',{name:'图片大小',exact:true}).evaluate(e=>{e.value='1.2';e.dispatchEvent(new Event('change',{bubbles:true}));});await p.waitForFunction(()=>model.size===1.2);assert.ok(await p.getByRole('button',{name:'完成',exact:true}).isVisible());
+  await seed(p);await p.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.exported=text;}}}));await p.getByRole('button',{name:'编辑',exact:true}).click();assert.ok(await p.locator('.sig-stage').isHidden());await p.getByRole('button',{name:'复制为 Markdown',exact:true}).click();assert.match(await p.evaluate(()=>exported),/assets\/sample-0.svg/);
+  await p.getByRole('tab',{name:'显示',exact:true}).click();assert.ok(await p.locator('.sig-stage').isVisible());await p.getByRole('slider',{name:'图片大小',exact:true}).evaluate(e=>{e.value='1.2';e.dispatchEvent(new Event('change',{bubbles:true}));});await p.waitForFunction(()=>model.size===1.2);assert.ok(await p.getByRole('button',{name:'完成',exact:true}).isVisible());
+ });
+ await run('edit mode replaces the gallery, remembers its tab and returns to browsing on finish',async p=>{
+  await seed(p);await p.getByRole('button',{name:'编辑',exact:true}).click();assert.ok(await p.locator('.sig-stage').isHidden());assert.equal(await p.getByRole('tab',{name:'显示',exact:true}).getAttribute('aria-selected'),'false');
+  await p.getByRole('tab',{name:'显示',exact:true}).click();assert.ok(await p.locator('.sig-stage').isVisible());assert.equal(await p.getByRole('tab',{name:'显示',exact:true}).getAttribute('aria-selected'),'true');
+  await p.getByRole('slider',{name:'图片大小',exact:true}).evaluate(e=>{e.value='1.1';e.dispatchEvent(new Event('change',{bubbles:true}));});await p.waitForFunction(()=>model.size===1.1);assert.equal(await p.getByRole('tab',{name:'显示',exact:true}).getAttribute('aria-selected'),'true');
+  await p.getByRole('button',{name:'完成',exact:true}).click();assert.ok(await p.locator('.sig-stage').isVisible());assert.ok(await p.locator('.sig-panel').isHidden());assert.ok(await p.getByRole('button',{name:'编辑',exact:true}).isVisible());
  });
  await run('remote streams are bounded and invalid remote formats are rejected',async p=>{
   const result=await p.evaluate(async()=>{const prior=fetch;let canceled=false;window.fetch=async()=>({ok:true,headers:new Headers({'content-type':'image/png'}),body:{getReader:()=>({read:async()=>({done:false,value:{byteLength:51*1024*1024}}),cancel:async()=>{canceled=true;},releaseLock(){}})}});let msg='';try{await plugin.remote({src:'https://example.com/huge',alt:''},0);}catch(e){msg=e.message;}window.fetch=prior;return{canceled,msg};});assert.ok(result.canceled);assert.match(result.msg,/50 MiB/);
