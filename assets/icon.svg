@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" role="img" aria-label="Inline Gallery">
+  <!-- Source artwork for icon.png. The bazaar rejects SVG icons, so render it with `npm run icon`. -->
+  <defs>
+    <linearGradient id="plate" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5B87D6"/>
+      <stop offset="1" stop-color="#2F5CA8"/>
+    </linearGradient>
+    <clipPath id="frame">
+      <rect x="36" y="34" width="88" height="92" rx="10"/>
+    </clipPath>
+  </defs>
+  <rect width="160" height="160" rx="34" fill="url(#plate)"/>
+  <!-- Two narrower neighbours peek out, so the mark reads as a gallery, not one photo. -->
+  <rect x="12" y="44" width="44" height="72" rx="8" fill="#ffffff" opacity=".38"/>
+  <rect x="104" y="44" width="44" height="72" rx="8" fill="#ffffff" opacity=".38"/>
+  <rect x="36" y="34" width="88" height="92" rx="10" fill="#ffffff"/>
+  <g clip-path="url(#frame)">
+    <circle cx="62" cy="58" r="8" fill="#F7C74E"/>
+    <path d="M36 126 L70 80 L92 108 L106 94 L124 126 Z" fill="#3F6FC0"/>
+  </g>
+</svg>

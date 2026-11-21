@@ -6,13 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-21
+
 ### Added
 
 - 预览浮层新增「复制图片」：把当前图片以 PNG 写入系统剪贴板，可直接粘贴到聊天窗口或其他编辑器。`assets/` 本地图片和支持跨域的远程图片可复制，外链缺 CORS 头时提示先下载到 assets；动图只复制静态单帧。
+- 插件图标 `icon.png`（源稿 `assets/icon.svg`），集市列表与插件设置页显示。
 
 ### Changed
 
 - 新建画廊默认使用主图模式；工具栏的视图按钮改为「主图」在前、「横排」在后。已有画廊保存的视图不变，v1 画廊仍迁移到横排。
+- 打包产物改为集市要求的 `package.zip`；发布工作流不再重命名资产。
 
 ## [0.2.0] - 2026-11-15
 

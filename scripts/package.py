@@ -11,7 +11,7 @@ import zipfile
 root = Path(__file__).resolve().parents[1]
 dist = root / 'dist'
 required = ['index.js', 'index.css', 'plugin.json', 'package.json', 'README.md',
-            'README.zh-CN.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md',
+            'README.zh-CN.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'icon.png',
             'i18n/en_US.json', 'i18n/zh_CN.json']
 # Rebuild dist from scratch so it cannot accumulate stale files.
 if dist.exists():
@@ -32,7 +32,9 @@ if docs.exists():
 # Keep the standalone contract preview in sync with the shipped bundle.
 subprocess.run(['node', str(root / 'tests/fixture.cjs')], env={**__import__('os').environ, 'WRITE_PREVIEW':'1'}, check=True)
 version = json.loads((root / 'plugin.json').read_text())['version']
-target = root.parent / ('siyuan-inline-gallery-' + version + '.zip')
+# The marketplace accepts only a Release asset named exactly package.zip, so the
+# local artifact keeps that name instead of carrying the version.
+target = root.parent / 'package.zip'
 files = sorted(p for p in dist.rglob('*') if p.is_file())
 with zipfile.ZipFile(target, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
     for file in files:
@@ -44,4 +46,4 @@ with zipfile.ZipFile(target) as archive:
     assert set(names) == {p.relative_to(dist).as_posix() for p in files}
     assert all(not name.startswith('/') and '..' not in Path(name).parts for name in names)
     assert b"require('./" not in archive.read('index.js')
-print(f'{target} ({target.stat().st_size:,} bytes; {len(files)} files; CRC OK)')
+print(f'{target} (v{version}; {target.stat().st_size:,} bytes; {len(files)} files; CRC OK)')
