@@ -33,8 +33,9 @@ if docs.exists():
 subprocess.run(['node', str(root / 'tests/fixture.cjs')], env={**__import__('os').environ, 'WRITE_PREVIEW':'1'}, check=True)
 version = json.loads((root / 'plugin.json').read_text())['version']
 # The marketplace accepts only a Release asset named exactly package.zip, so the
-# local artifact keeps that name instead of carrying the version.
-target = root.parent / 'package.zip'
+# ZIP keeps that name. It stays in the repo root because the release action only
+# uploads files inside the workspace.
+target = root / 'package.zip'
 files = sorted(p for p in dist.rglob('*') if p.is_file())
 with zipfile.ZipFile(target, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
     for file in files:
