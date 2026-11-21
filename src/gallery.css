@@ -91,6 +91,9 @@
 .sig-gallery .sig-lightbox::backdrop {background:#101820c9;}
 .sig-gallery .sig-lightbox-shell {display:flex;flex-direction:column;height:100%;min-height:0;gap:8px;}
 .sig-gallery .sig-lightbox-top {display:flex;align-items:center;flex-wrap:wrap;gap:4px;flex:none;}
+.sig-gallery .sig-copy-note {font-size:12px;color:var(--sig-muted);white-space:nowrap;}
+.sig-gallery .sig-copy-note:empty {display:none;}
+.sig-gallery .sig-copy-note.sig-error {color:var(--b3-theme-error,#bd4646);}
 .sig-gallery .sig-lightbox-port {display:flex;align-items:flex-start;flex:1;min-height:0;overflow:auto;padding:16px;background:var(--sig-soft);}
 .sig-gallery .sig-lightbox-image {display:block;flex:none;min-width:0;max-width:none;max-height:none;margin:0;object-fit:contain;}
 .sig-gallery .sig-zoom-value {min-width:42px;text-align:center;}

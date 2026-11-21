@@ -1,9 +1,10 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict'),C=require('../src/core');
 const image=(w,h,id='x')=>({id,src:'assets/'+id+'.png',alt:'',name:'',width:w,height:h});
-test('new galleries default to the scrollable row; valid models round trip',()=>{
- assert.equal(C.DEFAULTS.layout,'row');assert.equal(C.DEFAULTS.version,2);
- const m=C.normalize({...C.DEFAULTS,size:99,gap:-4,images:[image(1200,800)]});assert.equal(m.size,1.5);assert.equal(m.gap,0);assert.deepEqual(C.parse(C.serialize(m)),m);
+test('new galleries default to the main-image view; valid models round trip',()=>{
+ assert.equal(C.DEFAULTS.layout,'focus');assert.equal(C.DEFAULTS.version,2);
+ const m=C.normalize({...C.DEFAULTS,size:99,gap:-4,images:[image(1200,800)]});assert.equal(m.layout,'focus');assert.equal(m.size,1.5);assert.equal(m.gap,0);assert.deepEqual(C.parse(C.serialize(m)),m);
+ assert.equal(C.normalize({...C.DEFAULTS,layout:'row',images:[]}).layout,'row');
  assert.throws(()=>C.parse('{bad'));assert.throws(()=>C.normalize({version:99,images:[]}));
 });
 test('v1 galleries migrate without losing image order, IDs, paths or captions',()=>{

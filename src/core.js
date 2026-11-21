@@ -2,7 +2,8 @@
 'use strict';
 
 // Fallbacks applied by normalize(); missing version-2 fields fall back to these.
-const DEFAULTS = {version: 2, layout: 'row', size: 1, gap: 16, captions: false, images: []};
+// New galleries open in the main-image view; this only seeds the stored data.
+const DEFAULTS = {version: 2, layout: 'focus', size: 1, gap: 16, captions: false, images: []};
 
 const clamp = (n, lo, hi, fallback) => Number.isFinite(Number(n)) ? Math.min(hi, Math.max(lo, Number(n))) : fallback;
 
@@ -45,8 +46,10 @@ function normalize(input) {
         return {id, src, alt: String(item.alt || '').slice(0, 2000), name: String(item.name || '').slice(0, 500),
             width: clamp(item.width, 0, 100000, 0), height: clamp(item.height, 0, 100000, 0)};
     });
+    // Version 1 had no main-image view, so every v1 layout migrates to row.
+    const layout = input.version === 1 || input.layout === 'row' ? 'row' : DEFAULTS.layout;
     // Old fixed heights are deliberately not carried into the new responsive UI.
-    return {...DEFAULTS, layout: input.layout === 'focus' ? 'focus' : 'row',
+    return {...DEFAULTS, layout,
         size: input.version === 2 ? clamp(input.size, .6, 1.5, 1) : 1,
         gap: clamp(input.gap, 0, 32, 16), captions: !!input.captions, images};
 }

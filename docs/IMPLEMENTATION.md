@@ -6,9 +6,11 @@
 
 ```text
 ;;;siyuan-inline-gallery/gallery
-{"version":2,"layout":"row","size":1,"gap":16,"captions":false,"images":[{"id":"example","src":"assets/photo-id.jpg","alt":"说明","name":"photo.jpg","width":1200,"height":800}]}
+{"version":2,"layout":"focus","size":1,"gap":16,"captions":false,"images":[{"id":"example","src":"assets/photo-id.jpg","alt":"说明","name":"photo.jpg","width":1200,"height":800}]}
 ;;;
 ```
+
+`layout` 为新画廊默认的 `focus`（主图）或 `row`（横排）；v1 数据没有主图视图，迁移时统一落到 `row`。
 
 ## 宿主约定
 
@@ -25,6 +27,14 @@
 每个本地路径独立写入 `custom-data-assets-gallery-<UTF8 hex>` 属性，值为完整路径。属性名可逆且无短哈希碰撞；空间代价较大，适合小中型画廊。保存内容前维护属性，加载原始数据时也补齐引用。累计保留旧属性以保护撤销/历史；不主动删除文件。
 
 上传成功后先存 pending.json，再保护引用，最后合并当前 block content。批次按图片 ID 去重；宿主拒绝写入或原编辑器关闭时保留恢复记录。多接口间不具备原子事务，不能保证掉电零丢失或跨窗口强一致。
+
+## 预览与复制
+
+预览浮层是 ShadowRoot 内的 `<dialog>`，负责缩放、翻页和「复制图片」。复制用浏览器剪贴板 API：先 `fetch` 当前图片，不是 PNG 时经 blob URL 解码到 canvas 再编码为 PNG——Chromium 的剪贴板写入只接受 `image/png`；blob URL 让 canvas 保持同源，SVG 也能转换。因此不带 CORS 头的外链会失败并提示先下载到 assets。复制只读，不改写块内容，只读与发布模式下可用。
+
+复制进行中不禁用按钮：禁用的元素会失去焦点，浮层的左右方向键随即失效；改用内部标志阻止重入。
+
+三类失败各自给一句可执行提示，因为浏览器原文不含下一步：跨域 `fetch` 失败是 `TypeError`，图片无法解码是 `DOMException` 的 `EncodingError`，剪贴板拒绝写入是 `NotAllowedError`。实测（Chromium 1248）剪贴板写入要求剪贴板权限，而不是点击后的时效窗口：授权后等待 5.5 秒再写入仍然成功，未授权时立即写入也失败。
 
 ## 官方参考
 

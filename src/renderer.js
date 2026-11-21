@@ -31,6 +31,37 @@ const isImageFile = file => /^image\//i.test(file.type) ||
     /\.(png|jpe?g|gif|webp|avif|bmp|svg|tiff?|heic|heif)$/i.test(file.name);
 
 const fileName = src => src.split(/[?#]/)[0].split('/').pop() || src;
+// Chromium accepts only image/png on the clipboard write path, so other formats
+// are re-encoded. Decoding via a blob URL keeps the canvas same-origin (no
+// tainting) and also covers SVG sources.
+async function clipboardImage(win, doc, url) {
+    const response = await win.fetch(url);
+    if (!response.ok) throw new Error(`图片读取失败（HTTP ${response.status}）`);
+    const blob = await response.blob();
+    if (blob.type === 'image/png') return blob;
+    const objectURL = win.URL.createObjectURL(blob);
+    try {
+        const img = new win.Image();
+        img.src = objectURL;
+        await img.decode();
+        const canvas = doc.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        canvas.getContext('2d').drawImage(img, 0, 0);
+        return await new Promise((resolve, reject) => canvas.toBlob(
+            png => png ? resolve(png) : reject(new Error('图片无法转换为 PNG')), 'image/png'));
+    } finally { win.URL.revokeObjectURL(objectURL); }
+}
+// Verified failure shapes: a cross-origin fetch without CORS rejects with a
+// TypeError, an undecodable image with DOMException "EncodingError", a refused
+// clipboard write with DOMException "NotAllowedError". The browser's own text
+// for those is not a next step, so each case gets one.
+const copyFailure = (win, error) => {
+    if (error instanceof win.TypeError) return '无法读取图片数据；跨域链接的图片请先下载到 assets 再复制。';
+    if (error?.name === 'EncodingError') return '图片无法解码，可能已损坏。';
+    if (error instanceof win.DOMException) return '剪贴板写入被拒绝；请确认窗口在前台，并允许剪贴板权限。';
+    return message(error);
+};
 // Import prefers Markdown image syntax and ignores other lines. The preview
 // counts those instead of letting them disappear without a trace.
 function unparsedLineCount(text, refs) {
@@ -162,8 +193,9 @@ module.exports = function renderGallery(plugin, {element, content, setContent}) 
         }
     };
 
-    const rowButton = button('横排', 'row', () => setMode('row'), modes);
+    // Main-image view is listed (and used) first, matching the default layout.
     const focusButton = button('主图', 'focus', () => setMode('focus'), modes);
+    const rowButton = button('横排', 'row', () => setMode('row'), modes);
     toolbar.append(modes);
 
     const move = offset => {
@@ -569,6 +601,36 @@ module.exports = function renderGallery(plugin, {element, content, setContent}) 
         button('放大', 'add', () => { fit = false; scale *= 1.25; paint(); }, top, {signal: dialogSignal});
         const fitButton = button('适应窗口', 'fit', () => { fit = true; paint(); }, top, {signal: dialogSignal});
         button('100%', '', () => { fit = false; scale = 1; paint(); }, top, {signal: dialogSignal, text: true});
+        // Copy feedback belongs inside the dialog: a modal makes the toolbar
+        // status element behind it unreachable and invisible.
+        const copyNote = el(doc, 'span', 'sig-copy-note');
+        copyNote.setAttribute('role', 'status'); copyNote.setAttribute('aria-live', 'polite');
+        top.append(copyNote);
+        let copyTimer = 0, copying = false;
+        const say = (text, failed) => {
+            clearTimeout(copyTimer);
+            copyNote.classList.toggle('sig-error', !!failed);
+            copyNote.textContent = text;
+            if (!failed) copyTimer = setTimeout(() => { copyNote.textContent = ''; }, 2500);
+        };
+        // Copying does not disable the button: a disabled element loses focus and
+        // the arrow keys would stop reaching the dialog. Re-entry is blocked instead.
+        const copyImage = async () => {
+            if (copying) return;
+            copying = true;
+            say('正在复制…');
+            try {
+                if (!win.navigator.clipboard?.write || typeof win.ClipboardItem !== 'function') {
+                    throw new Error('当前环境不支持写入图片剪贴板');
+                }
+                const image = model.images[current];
+                const blob = await clipboardImage(win, doc, imageURL(image.src));
+                await win.navigator.clipboard.write([new win.ClipboardItem({[blob.type]: blob})]);
+                say('已复制图片');
+            } catch (error) { say(copyFailure(win, error), true); }
+            finally { copying = false; }
+        };
+        button('复制图片', 'copy', () => { copyImage(); }, top, {signal: dialogSignal});
         const close = button('关闭预览', 'close', () => dialog.close(), top, {signal: dialogSignal});
         const nav = el(doc, 'div', 'sig-lightbox-nav');
         const show = () => {
@@ -605,6 +667,7 @@ module.exports = function renderGallery(plugin, {element, content, setContent}) 
             controller.abort();
             observer?.disconnect();
             win.cancelAnimationFrame(zoomFrame);
+            clearTimeout(copyTimer);
             dialog.remove();
             if (!disposed) trigger.focus({preventScroll: true});
         }, {once: true});
