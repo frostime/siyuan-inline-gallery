@@ -40,7 +40,7 @@ window.render=(next=model)=>{
  }});
 };
 window.makeFile=async(name='same.png')=>{const canvas=document.createElement('canvas');canvas.width=1200;canvas.height=850;const ctx=canvas.getContext('2d');ctx.fillStyle='#e8eee9';ctx.fillRect(0,0,1200,850);ctx.fillStyle='#274e4a';ctx.font='30px sans-serif';ctx.fillText('Clipboard image fixture',50,80);return new File([await new Promise(r=>canvas.toBlob(r))],name,{type:'image/png'});};
-window.seed=(n=2)=>render({...C.DEFAULTS,images:Array.from({length:n},(_,i)=>({id:'sample'+i,src:'assets/sample-'+i+'.svg',name:'fixture-'+i+'.svg',alt:'',width:[1200,900,1600,700][i%4],height:[850,1000,900,1200][i%4]}))});
+window.seed=(n=2,layout='row')=>render({...C.DEFAULTS,layout,images:Array.from({length:n},(_,i)=>({id:'sample'+i,src:'assets/sample-'+i+'.svg',name:'fixture-'+i+'.svg',alt:'',width:[1200,900,1600,700][i%4],height:[850,1000,900,1200][i%4]}))});
 window.initialized=plugin.onload().then(()=>seed(${offline?'2':'0'}));
 </script>`;
 }

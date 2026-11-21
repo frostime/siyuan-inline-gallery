@@ -1,7 +1,7 @@
 {
   "status": "passed",
-  "tests": 26,
-  "bundleSha256": "514778f289e1fae0eadb4b4a9fc61d01d50cda3a7b1e369fabe06cb131432690",
+  "tests": 27,
+  "bundleSha256": "92d76049f982c5f45bd8b28041bc45467cf2c1ca85b42d11753d3e5b0c0dffd8",
   "cases": [
     "empty gallery and icon-only accessible toolbar",
     "host SVG/image/button theme rules cannot penetrate the gallery ShadowRoot",
@@ -11,6 +11,7 @@
     "equal inline modes persist and preserve independent row/selection state through host disposal",
     "thumbnail strip centers when short and keeps a selected item visible when overflowing",
     "image zoom is separate from mode; actual pixels, fit and keyboard navigation work",
+    "lightbox copies the visible image as a PNG bitmap without altering the block",
     "captions are inert text; reorder/remove preserve the selected image and never delete files",
     "batch paste accepts duplicate filenames with legacy succMap and native asset protection",
     "file picker and drop accept modern succFiles; ordinary editor paste is untouched",

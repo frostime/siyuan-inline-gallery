@@ -16,7 +16,11 @@ let PNG;try{({PNG}=require('pngjs'));}catch{({PNG}=require(process.env.CODEX_PRI
   assert.ok(await p.locator('.sig-empty').isVisible());assert.ok(await p.locator('.sig-empty').evaluate(e=>e.clientHeight>=180));
   assert.equal(await p.locator('.sig-toolbar').textContent(),'');
   for(const name of ['横排','主图','添加图片','编辑']){const button=p.locator('.sig-toolbar').getByRole('button',{name,exact:true});assert.ok(await button.isVisible());assert.equal(await button.textContent(),'');assert.ok(await button.locator('svg').count());}
+  assert.deepEqual(await p.locator('.sig-modes button').evaluateAll(bs=>bs.map(b=>b.getAttribute('aria-label'))),['主图','横排']);
   assert.ok(await p.locator('.sig-status').isHidden());assert.equal(await p.getByText('左右滑动浏览',{exact:false}).count(),0);
+  // A gallery created by the slash menu stores DEFAULTS, so a default render must open in main-image mode.
+  await p.evaluate(()=>render({...C.DEFAULTS,images:[]}));await settle(p);
+  assert.equal(await p.locator('.sig-stage').getAttribute('data-layout'),'focus');
  });
  await run('host SVG/image/button theme rules cannot penetrate the gallery ShadowRoot',async p=>{
   await seed(p);
@@ -53,7 +57,7 @@ let PNG;try{({PNG}=require('pngjs'));}catch{({PNG}=require(process.env.CODEX_PRI
    return {calls,filters:slash.filter,lite:slash.showInLite,breadcrumb:typeof window.insertButton,command:typeof window.command};
   });
   assert.equal(result.calls.length,1);assert.equal(result.breadcrumb,'undefined');assert.equal(result.command,'undefined');assert.ok(result.filters.includes('gallery')&&result.filters.includes('画廊')&&result.lite);
-  for(const [body,dom]of result.calls){assert.equal(dom,true);assert.match(body,/DOM:;;;siyuan-inline-gallery\/gallery/);assert.match(body,/"version": 2/);assert.match(body,/"layout": "row"/);}
+  for(const [body,dom]of result.calls){assert.equal(dom,true);assert.match(body,/DOM:;;;siyuan-inline-gallery\/gallery/);assert.match(body,/"version": 2/);assert.match(body,/"layout": "focus"/);}
  });
  await run('large single-row scrolling at wide and narrow widths, without wrapping',async p=>{
   await seed(p);for(const width of [1500,1100,375]){
@@ -91,6 +95,36 @@ let PNG;try{({PNG}=require('pngjs'));}catch{({PNG}=require(process.env.CODEX_PRI
   await dialog.getByRole('button',{name:'放大',exact:true}).click();assert.equal(await dialog.locator('img').evaluate(e=>e.clientWidth),1500);
   await dialog.getByRole('button',{name:'适应窗口',exact:true}).click();assert.equal(await dialog.getByRole('button',{name:'适应窗口',exact:true}).getAttribute('aria-pressed'),'true');
   await p.keyboard.press('ArrowRight');assert.equal(await dialog.locator('.sig-counter').textContent(),'2 / 2');await p.keyboard.press('Escape');await p.waitForSelector('dialog',{state:'detached'});assert.equal(await p.locator('dialog').count(),0);assert.equal(await p.locator('.sig-stage').getAttribute('data-layout'),'focus');
+ });
+ await run('lightbox copies the visible image as a PNG bitmap without altering the block',async p=>{
+  await seed(p);await p.getByRole('button',{name:'主图',exact:true}).click();await p.waitForFunction(()=>model.layout==='focus');
+  await p.evaluate(()=>{
+   window.clipboardWrites=[];
+   Object.defineProperty(navigator,'clipboard',{configurable:true,value:{write:async items=>{
+    const item=items[0],blob=await item.getType(item.types[0]),bytes=new Uint8Array(await blob.arrayBuffer());
+    clipboardWrites.push({type:item.types[0],size:bytes.length,signature:Array.from(bytes.slice(0,8))});
+   }}});
+  });
+  const commits0=await p.evaluate(()=>commits);
+  await p.locator('.sig-photo').click();const dialog=p.getByRole('dialog',{name:'图片预览'});await dialog.locator('img').waitFor();await p.waitForFunction(()=>galleryQuery('dialog img').naturalWidth===1200);
+  // The fixture assets are SVG, so the chromium-mandated PNG re-encode is exercised.
+  await dialog.getByRole('button',{name:'复制图片',exact:true}).click();await p.waitForFunction(()=>galleryQuery('dialog .sig-copy-note').textContent==='已复制图片');
+  const png=PNG.sync.write({width:4,height:3,data:Buffer.alloc(4*3*4,255)});
+  await p.route('**/assets/sample-1.svg',r=>r.fulfill({contentType:'image/png',body:png}));
+  await p.keyboard.press('ArrowRight');await p.waitForFunction(()=>galleryQuery('dialog .sig-counter').textContent==='2 / 2');
+  await dialog.getByRole('button',{name:'复制图片',exact:true}).click();await p.waitForFunction(()=>clipboardWrites.length===2);
+  const writes=await p.evaluate(()=>clipboardWrites),pngSignature=[137,80,78,71,13,10,26,10];
+  for(const write of writes){assert.equal(write.type,'image/png');assert.deepEqual(write.signature,pngSignature);}
+  // Re-encoded SVG keeps its rendered pixels; the PNG source passes through unchanged.
+  assert.ok(writes[0].size>100);assert.equal(writes[1].size,png.length);
+  assert.equal(await p.evaluate(()=>commits),commits0);
+  // A failed fetch must report itself in the dialog instead of copying silently.
+  await p.unroute('**/assets/sample-1.svg');
+  await p.route('**/assets/sample-1.svg',r=>r.fulfill({status:404,body:''}));
+  await dialog.getByRole('button',{name:'复制图片',exact:true}).click();await p.waitForFunction(()=>galleryQuery('dialog .sig-copy-note').textContent==='图片读取失败（HTTP 404）');
+  assert.equal(await p.evaluate(()=>clipboardWrites.length),2);
+  await p.unroute('**/assets/sample-1.svg');
+  await p.keyboard.press('Escape');await p.waitForSelector('dialog',{state:'detached'});
  });
  await run('captions are inert text; reorder/remove preserve the selected image and never delete files',async p=>{
   await seed(p,3);await p.getByRole('button',{name:'主图',exact:true}).click();await p.waitForFunction(()=>model.layout==='focus');await p.getByRole('button',{name:'选择第 2 张图片',exact:true}).click();

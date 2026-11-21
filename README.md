@@ -10,6 +10,12 @@ Type **`/gallery`** or **`/画廊`** in a normal document paragraph, select "Ima
 | --- | --- |
 | ![Main-image mode: full-width image with a centered thumbnail strip](docs/images/focus-mode.png) | ![Edit mode: image list, import preview and export](docs/images/edit-mode.png) |
 
+## Views
+
+A new gallery opens in **main-image mode**: one full-width image with a centered thumbnail strip. **Row mode** puts every image in a single horizontally scrolling row. The first two toolbar buttons switch between them, and the choice is saved in the gallery.
+
+Clicking an image opens the preview overlay. Besides zooming and paging, "Copy image" writes the visible image to the system clipboard as a PNG, so it can be pasted into a chat window or another editor without locating the asset file first. Workspace `assets/...` images and CORS-enabled remote images can be copied; an external link without CORS headers must be downloaded to assets first. Animated GIF/WebP sources are copied as a single still frame, because the clipboard write path only accepts PNG. Copying never modifies the block, so it also works in read-only and publish mode.
+
 ## Image Import
 
 | Input | Behavior |
