@@ -2,7 +2,7 @@
   "name": "siyuan-inline-gallery",
   "author": "Inline Gallery contributors",
   "url": "https://github.com/frostime/siyuan-inline-gallery",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "minAppVersion": "3.8.5",
   "backends": [
     "windows",
@@ -28,6 +28,7 @@
     "default": "README.md",
     "zh-CN": "README.zh-CN.md"
   },
+  "icon": "icon.png",
   "keywords": [
     "gallery",
     "image",

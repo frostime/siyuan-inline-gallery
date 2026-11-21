@@ -1,6 +1,6 @@
 {
   "name": "siyuan-inline-gallery",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "main": "index.js",
   "license": "MIT",
@@ -9,6 +9,7 @@
     "test": "node --test tests/core.test.js",
     "test:browser": "node tests/browser.cjs",
     "preview": "node scripts/preview.cjs",
+    "icon": "node scripts/render-icon.cjs",
     "package": "python3 scripts/package.py"
   }
 }

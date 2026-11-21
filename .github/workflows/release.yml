@@ -56,14 +56,13 @@ jobs:
         run: |
           set -euo pipefail
           npm run package
-          mv ../siyuan-inline-gallery-*.zip .
-          ls -l siyuan-inline-gallery-*.zip
+          ls -l ../package.zip
 
       - name: Release
         uses: ncipollo/release-action@v1.21.0
         with:
           allowUpdates: true
           artifactErrorsFailBuild: true
-          artifacts: "siyuan-inline-gallery-*.zip"
+          artifacts: "package.zip"
           token: ${{ secrets.GITHUB_TOKEN }}
           prerelease: false

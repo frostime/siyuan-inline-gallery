@@ -41,7 +41,8 @@ jobs:
       - name: Verify the package contents
         run: |
           set -euo pipefail
-          zip_path="$(ls ../siyuan-inline-gallery-*.zip)"
+          zip_path="../package.zip"
           unzip -l "$zip_path"
           unzip -p "$zip_path" plugin.json | grep -q '"name": "siyuan-inline-gallery"'
+          unzip -p "$zip_path" plugin.json | grep -q '"icon": "icon.png"'
           unzip -p "$zip_path" index.js | grep -q 'customBlockRenders'
